@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DIR="/Users/joechang/Project/Kairos/data-warehouse-apscheduler/logs"
+DIR="/home/admin/data-warehouse-apscheduler/logs"
 RETENTION_DAYS=14
 SAFE_MIN=10   # 近 10 分鐘內修改過的檔案不刪，避免正在寫入
 
