@@ -13,7 +13,7 @@ from src.utils.model_parser import model_parser
 
 
 interval = 0.5 # minute
-mongo = MongoClient(is_test=True)
+mongo = MongoClient(is_test=False)
 portfolio_col = mongo.DATA_DB.portfolio
 accouont_summary_col = mongo.DATA_DB.account_summary_1_minute
 
@@ -35,6 +35,7 @@ async def run(logger: Logger):
     await ALERT_BOT.flush(timeout=3.0) 
     await ALERT_BOT.shutdown()
 
+#################### Private Function ############################
 
 async def _account_summary_processing(portfolio: Dict[str, Any], current_time: datetime, logger: Logger, alert_bot: DiscordAlerter):
     portfolio_name = portfolio.get("portfolio")

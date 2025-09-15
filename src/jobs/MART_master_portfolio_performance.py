@@ -11,7 +11,7 @@ from utils.bson_utils import bsonify_row
 import pandas as pd
 
 
-mongo = MongoClient(is_test=True)
+mongo = MongoClient(is_test=False)
 portfolio_col = mongo.DATA_DB.portfolio
 account_summary_col = mongo.DATA_DB.account_summary_1_minute
 master_portfolio_performance_col = mongo.MART_DB.master_portfolio_performance

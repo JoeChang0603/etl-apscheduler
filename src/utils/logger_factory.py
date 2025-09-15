@@ -46,9 +46,7 @@ class EnhancedLoggerFactory:
                 filename_prefix=prefix,
                 rotation="daily"
             ),
-            # DiscordWebhookHandler(
-            #     webhook_url=Env.ETL_PROCESS_WEBHOOK
-            # )
+            DiscordHandler(webhook_url=Env.ETL_PROCESS_WEBHOOK)
         ]
         
         return Logger(config=config, name=name, handlers=handlers)
@@ -69,7 +67,7 @@ class EnhancedLoggerFactory:
         handlers = [
             JobRotatingFileHandler(base_dir=base_dir, filename_prefix=use_prefix, rotation="per_minute"),
             ErrorFileHandler(base_dir=base_dir, filename_prefix=use_prefix, rotation="daily"),
-            #DiscordHandler(webhook_url=Env.ETL_PROCESS_WEBHOOK)
+            DiscordHandler(webhook_url=Env.ETL_PROCESS_WEBHOOK)
         ]
         return Logger(config=config, name=job_id, handlers=handlers)
 
