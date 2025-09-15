@@ -42,7 +42,7 @@ class OkxSnapshotAsync(SnapshotBase):
                 balances=balances,
                 transfer_adjustment=float(await self.get_transfer_adjustment(0.5)),
                 current_time=self.current_time,
-                tw_time=datetime_to_str(self.current_time - timedelta(hours=8))
+                tw_time=datetime_to_str(self.current_time + timedelta(hours=8))
             )
 
     async def get_transfer_adjustment(self, interval):

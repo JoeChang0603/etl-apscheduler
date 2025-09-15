@@ -59,6 +59,6 @@ class BitmexSnapshotAsync(SnapshotBase):
                 balances=balances,
                 transfer_adjustment=0,      # 先設為 0 帶krex補上fucction後更新
                 current_time=self.current_time,
-                tw_time=datetime_to_str(self.current_time - timedelta(hours=8))
+                tw_time=datetime_to_str(self.current_time + timedelta(hours=8))
             )
 

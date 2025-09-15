@@ -61,5 +61,5 @@ class ZoomexSnapshotAsync(SnapshotBase):
                 balances=balances,
                 transfer_adjustment= 0, 
                 current_time=self.current_time,
-                tw_time=datetime_to_str(self.current_time - timedelta(hours=8))
+                tw_time=datetime_to_str(self.current_time + timedelta(hours=8))
             )

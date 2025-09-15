@@ -65,6 +65,6 @@ class BinanceSnapshotAsync(SnapshotBase):
                 balances=balances,
                 transfer_adjustment=0,       # Disable, wait for development
                 current_time=self.current_time,
-                tw_time=datetime_to_str(self.current_time - timedelta(hours=8))
+                tw_time=datetime_to_str(self.current_time + timedelta(hours=8))
             )
 
