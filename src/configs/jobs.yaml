@@ -40,13 +40,13 @@ jobs:
   - id: DATA_account_summary_1_minute
     func: DATA_account_summary_1_minute:run
     trigger: cron
-    second: "*/30"
+    second: "*/10"
   - id: MART_master_portfolio_performance
     func: MART_master_portfolio_performance:run
     trigger: cron
-    second: "*/60"
+    second: "*/20"
   - id: MART_portfolio_performance
     func: MART_portfolio_performance:run
     trigger: cron
-    second: "*/60"
+    second: "*/20"
 
