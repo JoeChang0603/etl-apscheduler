@@ -38,11 +38,11 @@ class JobRotatingFileHandler(BaseLogHandler):
         if rotation == "daily":
             self._pattern = "%Y-%m-%d" 
         elif rotation == "hourly": 
-            self._pattern = "%Y%m%d_%H"
+            self._pattern = "%Y%m%d %H:00:00"
         elif rotation == "per_minute": 
-            self._pattern = "%Y%m%d_%H%M"
+            self._pattern = "%Y%m%d %H:%M:00"
         elif rotation == "per_second": 
-            self._pattern = "%Y%m%d_%H%M%S"
+            self._pattern = "%Y%m%d %H:%M:%S"
 
     def _get_current_filepath(self) -> str:
         """Generate a unique log file path for the current job execution based on the current UTC timestamp (to the second)."""

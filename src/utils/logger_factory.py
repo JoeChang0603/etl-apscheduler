@@ -65,7 +65,7 @@ class EnhancedLoggerFactory:
             str_format="%(asctime)s %(icon)s [%(levelname)s] JOB_%(name)s - %(message)s",
         )
         handlers = [
-            JobRotatingFileHandler(base_dir=base_dir, filename_prefix=use_prefix, rotation="per_minute"),
+            JobRotatingFileHandler(base_dir=base_dir, filename_prefix=use_prefix, rotation="hourly"),
             ErrorFileHandler(base_dir=base_dir, filename_prefix=use_prefix, rotation="daily"),
             DiscordHandler(webhook_url=Env.ETL_PROCESS_WEBHOOK)
         ]

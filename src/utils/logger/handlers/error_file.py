@@ -20,9 +20,9 @@ class ErrorFileHandler(BaseLogHandler):
             self.base_dir.mkdir(parents=True, exist_ok=True)
         self._pattern = {
             "daily": "%Y-%m-%d",
-            "hourly": "%Y%m%d_%H",
-            "per_minute": "%Y%m%d_%H%M",
-            "per_second": "%Y%m%d_%H%M%S",
+            "hourly": "%Y%m%d %H:00:00",
+            "per_minute": "%Y%m%d %H:%M:00",
+            "per_second": "%Y%m%d %H:%M:%S",
         }[rotation]
 
     def _get_current_filepath(self) -> str:
