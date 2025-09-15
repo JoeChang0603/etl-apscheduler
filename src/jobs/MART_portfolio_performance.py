@@ -24,7 +24,7 @@ async def run(logger: Logger):
         logger.info(f"Portfolio Aggregation: {result.to_string()}")
 
         latest_performance = await _get_latest_portfolio_performance()
-        data = await _vectorized_process(result, latest_performance, current_time)
+        data = await _vectorized_process(result, latest_performance, current_time, logger)
 
         ops = []
         for rec in data.to_dict("records"):
@@ -96,7 +96,8 @@ async def _get_latest_portfolio_performance() -> dict[str, dict[str, Any]]:
 async def _vectorized_process(
     latest_account_summary: pd.DataFrame,
     latest_perf_dict: dict,
-    current_time: datetime
+    current_time: datetime,
+    logger: Logger
 ) -> pd.DataFrame:
     """
     透過 vectorized 操作，計算各 portfolio 的績效指標（NAV、CRR、MDD...）
@@ -117,68 +118,70 @@ async def _vectorized_process(
         - current_time
         - tw_time
     """
-    
-    # 將 dict 轉成 DataFrame
-    latest_perf_df = pd.DataFrame(latest_perf_dict.values())
+    try:
+        # 將 dict 轉成 DataFrame
+        latest_perf_df = pd.DataFrame(latest_perf_dict.values())
 
-    if latest_perf_df.empty:
-        portfolio = latest_account_summary["portfolio"].values[0]
-        total_usd_value = latest_account_summary["total_usd_value"].values[0]
-        transfer_adjustment = latest_account_summary["transfer_adjustment"].values[0]
-        net_value = total_usd_value + transfer_adjustment
+        if latest_perf_df.empty:
+            portfolio = latest_account_summary["portfolio"].values[0]
+            total_usd_value = latest_account_summary["total_usd_value"].values[0]
+            transfer_adjustment = latest_account_summary["transfer_adjustment"].values[0]
+            net_value = total_usd_value + transfer_adjustment
 
-        # 建立單筆 DataFrame（可與後續邏輯保持一致）
-        latest_perf_df = pd.DataFrame([{
-            "portfolio" : portfolio,
-            "history_high": 0,
-            "nav": 100,
-            "total_usd_value": net_value,
-            "crr": 0,
-            "mdd": 0
-        }])
+            # 建立單筆 DataFrame（可與後續邏輯保持一致）
+            latest_perf_df = pd.DataFrame([{
+                "portfolio" : portfolio,
+                "history_high": 0,
+                "nav": 100,
+                "total_usd_value": net_value,
+                "crr": 0,
+                "mdd": 0
+            }])
 
-    # 合併資料
-    df = pd.merge(latest_account_summary, latest_perf_df, on="portfolio", how="left", suffixes=("", "_prev"))
+        # 合併資料
+        df = pd.merge(latest_account_summary, latest_perf_df, on="portfolio", how="left", suffixes=("", "_prev"))
 
-    # 處理 fallback 值（若沒有歷史紀錄）
-    df["history_high"] = df["history_high"].fillna(0)
-    df["nav"] = df["nav"].fillna(100)
-    df["total_usd_value_prev"] = df["total_usd_value_prev"].fillna(df["total_usd_value"])
-    df["crr"] = df["crr"].fillna(0)
-    df["mdd"] = df["mdd"].fillna(0)
+        # 處理 fallback 值（若沒有歷史紀錄）
+        df["history_high"] = df["history_high"].fillna(0)
+        df["nav"] = df["nav"].fillna(100)
+        df["total_usd_value_prev"] = df["total_usd_value_prev"].fillna(df["total_usd_value"])
+        df["crr"] = df["crr"].fillna(0)
+        df["mdd"] = df["mdd"].fillna(0)
 
-    # 計算
-    df["net_value"] = df["total_usd_value"] + df["transfer_adjustment"]
-    df["current_return"] = (df["net_value"] - df["total_usd_value_prev"]) / df["total_usd_value_prev"]
-    df["crr_new"] = (1 + df["crr"]) * (1 + df["current_return"]) - 1
-    df["nav_new"] = df["nav"] * (1 + df["current_return"])
-    df["history_high_new"] = df[["nav_new", "history_high"]].max(axis=1)
-    df["cd"] = df["nav_new"] / df["history_high_new"] - 1
-    df["mdd_new"] = df[["cd", "mdd"]].min(axis=1)
+        # 計算
+        df["net_value"] = df["total_usd_value"] + df["transfer_adjustment"]
+        df["current_return"] = (df["net_value"] - df["total_usd_value_prev"]) / df["total_usd_value_prev"]
+        df["crr_new"] = (1 + df["crr"]) * (1 + df["current_return"]) - 1
+        df["nav_new"] = df["nav"] * (1 + df["current_return"])
+        df["history_high_new"] = df[["nav_new", "history_high"]].max(axis=1)
+        df["cd"] = df["nav_new"] / df["history_high_new"] - 1
+        df["mdd_new"] = df[["cd", "mdd"]].min(axis=1)
 
-    # 加入時間欄位
-    df["current_time"] = current_time
-    df["tw_time"] = (current_time + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S")
+        # 加入時間欄位
+        df["current_time"] = current_time
+        df["tw_time"] = (current_time + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S")
 
-    # 選擇要儲存的欄位
-    return df[
-        [
-            "portfolio",
-            "total_usd_value",
-            "history_high_new",
-            "nav_new",
-            "current_return",
-            "crr_new",
-            "cd",
-            "mdd_new",
-            "current_time",
-            "tw_time",
-        ]
-    ].rename(
-        columns={
-            "history_high_new": "history_high",
-            "nav_new": "nav",
-            "crr_new": "crr",
-            "mdd_new": "mdd",
-        }
-    )
+        # 選擇要儲存的欄位
+        return df[
+            [
+                "portfolio",
+                "total_usd_value",
+                "history_high_new",
+                "nav_new",
+                "current_return",
+                "crr_new",
+                "cd",
+                "mdd_new",
+                "current_time",
+                "tw_time",
+            ]
+        ].rename(
+            columns={
+                "history_high_new": "history_high",
+                "nav_new": "nav",
+                "crr_new": "crr",
+                "mdd_new": "mdd",
+            }
+        )
+    except Exception as e:
+        log_exception(logger, e, context=latest_account_summary['portfolio'])

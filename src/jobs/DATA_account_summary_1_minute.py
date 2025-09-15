@@ -67,4 +67,4 @@ async def _account_summary_processing(portfolio: Dict[str, Any], current_time: d
 
         logger.info(f"portfolio docs: {data}")
     except Exception as e:
-        log_exception(logger,e)
+        log_exception(logger,e, context=portfolio_name)
