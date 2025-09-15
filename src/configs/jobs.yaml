@@ -44,9 +44,9 @@ jobs:
   - id: MART_master_portfolio_performance
     func: MART_master_portfolio_performance:run
     trigger: cron
-    second: "*/10"
+    second: "*/30"
   - id: MART_portfolio_performance
     func: MART_portfolio_performance:run
     trigger: cron
-    second: "*/10"
+    second: "*/60"
 
