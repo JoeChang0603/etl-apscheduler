@@ -1,9 +1,12 @@
 import asyncio
 from motor.motor_asyncio import AsyncIOMotorClient
 from configs.env_config import Env
+from utils.casting import to_bool
+
+IS_TEST = to_bool(Env.IS_TEST)
 
 class MongoClient:
-    def __init__(self, is_test: bool = Env.IS_TEST):
+    def __init__(self, is_test: bool = IS_TEST):
         self.client = AsyncIOMotorClient(Env.MONGO_URI)
         if is_test:
             self.DATA_DB = self.client.T_DATA

@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Env:
-    IS_TEST= os.getenv("IS_TEST")
+    IS_TEST = os.getenv("IS_TEST")
     MONGO_URI = os.getenv("MONGO_URI")
     SQLALCHEMY_URL = os.getenv("SQLALCHEMY_URL")
     ETL_PROCESS_WEBHOOK = os.getenv("ETL_PROCESS_WEBHOOK")
@@ -14,11 +14,11 @@ class Env:
     @classmethod
     def validate(cls):
         required_vars = {
+            "IS_TEST": cls.IS_TEST,
             "MONGO_URI": cls.MONGO_URI,
             "SQLALCHEMY_URL": cls.SQLALCHEMY_URL,
             "ETL_PROCESS_WEBHOOK": cls.ETL_PROCESS_WEBHOOK,
             "ETL_TOTAL_USD_VALUE_ALERT": cls.ETL_TOTAL_USD_VALUE_ALERT,
-            "IS_TEST": cls.IS_TEST
         }
 
         missing_vars = [var for var, value in required_vars.items() if not value]
