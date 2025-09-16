@@ -10,8 +10,7 @@ from utils.bson_utils import bsonify_row
 
 import pandas as pd
 
-
-mongo = MongoClient(is_test=False)
+mongo = MongoClient()
 portfolio_col = mongo.DATA_DB.portfolio
 account_summary_col = mongo.DATA_DB.account_summary_1_minute
 master_portfolio_performance_col = mongo.MART_DB.master_portfolio_performance
@@ -47,7 +46,6 @@ async def run(logger: Logger):
 
 async def _master_portfolio_aggregate(current_time: datetime):
     query = {
-        "frequency": "1m",
         "status": "active"
     }
     portfolio_df =  pd.DataFrame(await portfolio_col.find(query).to_list())
@@ -63,7 +61,7 @@ async def _master_portfolio_aggregate(current_time: datetime):
             {"$replaceRoot": {"newRoot": "$doc"}}
     ]
     account_summary_df = pd.DataFrame(await account_summary_col.aggregate(pipeline).to_list())
-    
+
 
     # Master_Portfolio Aggregation
     df = pd.merge(portfolio_df, account_summary_df, on="portfolio", how="inner").loc[

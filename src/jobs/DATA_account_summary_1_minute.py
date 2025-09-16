@@ -13,7 +13,7 @@ from src.utils.model_parser import model_parser
 
 
 interval = 0.5 # minute
-mongo = MongoClient(is_test=False)
+mongo = MongoClient()
 portfolio_col = mongo.DATA_DB.portfolio
 accouont_summary_col = mongo.DATA_DB.account_summary_1_minute
 
