@@ -46,7 +46,6 @@ async def run(logger: Logger):
 
 async def _master_portfolio_aggregate(current_time: datetime):
     query = {
-        "frequency": "1m",
         "status": "active"
     }
     portfolio_df =  pd.DataFrame(await portfolio_col.find(query).to_list())
