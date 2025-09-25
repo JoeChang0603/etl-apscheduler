@@ -1,14 +1,21 @@
 # src/utils/mongo_serialization.py
+"""Helpers for converting pandas/numpy rows into BSON-safe dictionaries."""
+
 from __future__ import annotations
+
 from typing import Any, Dict
+
 import numpy as np
 import pandas as pd
 
 __all__ = ["bsonify_row"]
 
+
 def bsonify_row(row: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    將 pandas/numpy 值轉為 PyMongo 可接受型別；NaN/NaT/None 不寫入。
+    """Convert pandas/numpy values into BSON-friendly primitives.
+
+    :param row: Mapping of column names to scalar values produced by pandas.
+    :return: Dictionary containing only BSON-compatible primitives.
     """
     out: Dict[str, Any] = {}
     for k, v in row.items():

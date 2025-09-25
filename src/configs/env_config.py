@@ -1,18 +1,28 @@
+"""Environment variable loading and validation helpers."""
+
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv()
 
+
 class Env:
+    """Namespace for environment configuration values."""
+
     IS_TEST = os.getenv("IS_TEST")
     MONGO_URI = os.getenv("MONGO_URI")
     SQLALCHEMY_URL = os.getenv("SQLALCHEMY_URL")
     ETL_PROCESS_WEBHOOK = os.getenv("ETL_PROCESS_WEBHOOK")
     ETL_TOTAL_USD_VALUE_ALERT = os.getenv("ETL_TOTAL_USD_VALUE_ALERT")
- 
 
     @classmethod
-    def validate(cls):
+    def validate(cls) -> None:
+        """Ensure all required environment variables are present.
+
+        :raises ValueError: If one or more required variables are missing.
+        """
+
         required_vars = {
             "IS_TEST": cls.IS_TEST,
             "MONGO_URI": cls.MONGO_URI,
@@ -26,6 +36,7 @@ class Env:
             raise ValueError(
                 f"Missing required environment variables: {', '.join(missing_vars)}"
             )
+
 
 Env.validate()
     

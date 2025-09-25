@@ -1,16 +1,26 @@
-import krex.async_support as krex
 from datetime import datetime, timedelta
+
+import krex.async_support as krex
+
 from exchange.base import ExchangeBase
-from utils.logger_factory import log_exception 
+from utils.logger_factory import log_exception
 
 
 class BitmexExchangeAsync(ExchangeBase):
+    """Context-managed BitMEX wrapper exposing a small API subset."""
+
     def __init__(self, portfolio, logger):
+        """Store portfolio credentials and logger details.
+
+        :param portfolio: Portfolio configuration including API keys.
+        :param logger: Logger used to report errors.
+        """
         self.portfolio = portfolio
         self.client = None
         self.logger = logger
     
     async def __aenter__(self):
+        """Initialise the krex BitMEX client and return ``self``."""
         self.client = await krex.bitmex(
             api_key=self.portfolio["api_key"],
             api_secret=self.portfolio["api_secret"],
@@ -20,13 +30,16 @@ class BitmexExchangeAsync(ExchangeBase):
         return self
 
     async def __aexit__(self, exc_type, exc, tb):
+        """Dispose the BitMEX client when leaving the context."""
         if self.client:
             await self.client.__aexit__(exc_type, exc, tb)
 
     async def get_balance(self):
+        """Return margin balances reported by BitMEX."""
         return await self.client.get_margin()
     
     async def get_instrument_info(self):
+        """Fetch instrument metadata from BitMEX."""
         return await self.client.get_instrument_info()
     
     
@@ -47,4 +60,3 @@ class BitmexExchangeAsync(ExchangeBase):
     #         log_exception(self.logger, e, context="Bybit Exchange")
     #         return 0
     #     return adjustment
-

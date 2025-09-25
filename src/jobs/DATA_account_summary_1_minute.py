@@ -1,3 +1,5 @@
+"""Job that snapshots per-portfolio account summaries every minute."""
+
 import asyncio
 from datetime import datetime
 from typing import Any, Dict
@@ -6,8 +8,8 @@ from configs.env_config import Env
 from src.bot.discord import DiscordAlerter
 from src.mongo.base import MongoClient
 from src.snapshot.factory import SnapshotFactory
-from src.utils.logger.logger import Logger
 from src.utils.logger.config import LogLevel
+from src.utils.logger.logger import Logger
 from src.utils.logger_factory import log_exception
 from src.utils.model_parser import model_parser
 
@@ -18,7 +20,11 @@ portfolio_col = mongo.DATA_DB.portfolio
 accouont_summary_col = mongo.DATA_DB.account_summary_1_minute
 
 
-async def run(logger: Logger):
+async def run(logger: Logger) -> None:
+    """Snapshot account summaries for active portfolios and persist results.
+
+    :param logger: Logger instance for diagnostics and error reporting.
+    """
 
     ALERT_BOT = DiscordAlerter(
         webhook_url=Env.ETL_TOTAL_USD_VALUE_ALERT,
@@ -38,6 +44,13 @@ async def run(logger: Logger):
 #################### Private Function ############################
 
 async def _account_summary_processing(portfolio: Dict[str, Any], current_time: datetime, logger: Logger, alert_bot: DiscordAlerter):
+    """Fetch snapshot data for a single portfolio and persist it.
+
+    :param portfolio: Portfolio document containing credentials and thresholds.
+    :param current_time: Timestamp applied to the snapshot document.
+    :param logger: Logger used for diagnostics.
+    :param alert_bot: Discord alerter for threshold breaches.
+    """
     portfolio_name = portfolio.get("portfolio")
     try:
         logger.info(f"portfolio docs: {portfolio_name}")

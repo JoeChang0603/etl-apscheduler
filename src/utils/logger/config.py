@@ -1,8 +1,12 @@
-from enum import IntEnum
+"""Configuration objects and enums used by the logging subsystem."""
+
 from dataclasses import dataclass
+from enum import IntEnum
 
 
 class LogLevel(IntEnum):
+    """Severity levels understood by the custom logger implementation."""
+
     TRACE = 0
     DEBUG = 1
     INFO = 2
@@ -10,13 +14,18 @@ class LogLevel(IntEnum):
     ERROR = 4
     CRITICAL = 5
 
+
 @dataclass
 class LogEvent:
+    """A single log message captured for buffering/dispatch."""
+
     text: str
     level: LogLevel
 
 
 class LoggerConfig:
+    """Runtime configuration for :class:`utils.logger.logger.Logger`."""
+
     def __init__(
         self,
         base_level: LogLevel = LogLevel.INFO,
@@ -25,25 +34,14 @@ class LoggerConfig:
         buffer_capacity: int = 100,
         buffer_timeout: float = 5.0,
     ):
-        """
-        Initializes the LoggerConfig.
+        """Initialise configuration defaults for a :class:`Logger`.
 
-        Args:
-            base_level (LogLevel): The minimum log level that will be logged.
-                Defaults to LogLevel.INFO.
-            buffer_capacity (int): Maximum number of messages in the buffer
-                before forcing a flush. Must be > 1. Defaults to 100.
-            buffer_timeout (float): Maximum time (in seconds) before forcing
-                a buffer flush, even if it's not full. Must be > 0. Defaults to 5.0.
-            do_stdout (bool): If True, logs are also printed to stdout. Defaults to False.
-            str_format (str): The format string for log messages.
-                Supports %(asctime)s, %(levelname)s, %(name)s, and %(message)s.
-                Defaults to "%(asctime)s [%(levelname)s] %(name)s - %(message)s".
-
-        Raises:
-            ValueError: If buffer_capacity is not an int.
-            ValueError: If buffer_capacity <= 1 or buffer_timeout <= 0.
-            ValueError: If str_format does not contain '%(message)s' placeholder.
+        :param base_level: Minimum severity that will be recorded.
+        :param do_stdout: Whether messages are mirrored to stdout.
+        :param str_format: Format string applied to log messages.
+        :param buffer_capacity: Maximum buffered events before a flush.
+        :param buffer_timeout: Maximum seconds before the buffer auto-flushes.
+        :raises ValueError: If validation of supplied values fails.
         """
         self.base_level = base_level
         self.do_stdout = do_stdout

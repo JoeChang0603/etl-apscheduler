@@ -1,18 +1,31 @@
+"""Handler that isolates error-level logs into dedicated files."""
+
 import os
-from typing import Literal, List
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import List, Literal
+
+from utils.logger.config import LogEvent, LogLevel
 from utils.logger.handlers.base import BaseLogHandler
-from utils.logger.config import LogLevel, LogEvent
+
 
 class ErrorFileHandler(BaseLogHandler):
+    """Persist only error and higher severity messages to rotating files."""
+
     def __init__(
         self,
         base_dir: str,
         filename_prefix: str = "",
         create: bool = True,
-        rotation: Literal["daily", "hourly", "per_minute", "per_second"] = "daily"
+        rotation: Literal["daily", "hourly", "per_minute", "per_second"] = "daily",
     ) -> None:
+        """Configure the handler target directory and rotation schedule.
+
+        :param base_dir: Base directory where error logs are written.
+        :param filename_prefix: Optional prefix to group log files.
+        :param create: Whether missing directories should be created.
+        :param rotation: Frequency granularity for the error log filenames.
+        """
         super().__init__()
         self.base_dir = Path(base_dir)
         self.filename_prefix = filename_prefix
@@ -26,6 +39,8 @@ class ErrorFileHandler(BaseLogHandler):
         }[rotation]
 
     def _get_current_filepath(self) -> str:
+        """Compute the destination file path for the current rotation window."""
+
         pattern = datetime.now(timezone.utc).strftime(self._pattern)
         filename = f"{pattern}.error.log"
         if self.filename_prefix:
@@ -33,6 +48,11 @@ class ErrorFileHandler(BaseLogHandler):
         return str(self.base_dir / filename)
 
     async def push(self, records: List[LogEvent]) -> None:
+        """Append only error-or-higher events to the error log file.
+
+        :param records: Buffered log events awaiting persistence.
+        """
+
         errors = [ev.text for ev in records if ev.level.value >= LogLevel.ERROR.value]
         if not errors:
             return

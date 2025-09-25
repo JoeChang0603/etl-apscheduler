@@ -1,20 +1,33 @@
 from datetime import timedelta
 
-from snapshot.base import SnapshotBase
 from exchange.binance import BinanceExchangeAsync
 from model.account_summary import AccountSummary, AssetBalance
+from snapshot.base import SnapshotBase
 from utils.model_parser import model_parser
 from utils.misc import datetime_to_str
 
 
 class BinanceSnapshotAsync(SnapshotBase):
+    """Produce account summaries for Binance portfolios."""
+
     def __init__(self, portfolio, current_time, interval, logger):
+        """Persist common context used when querying Binance.
+
+        :param portfolio: Portfolio metadata with credential information.
+        :param current_time: Datetime representing the snapshot timestamp.
+        :param interval: Time interval in minutes used for adjustments.
+        :param logger: Logger instance for diagnostics.
+        """
         self.portfolio = portfolio
         self.current_time = current_time
         self.interval = interval
         self.logger = logger
 
     async def snapshot_account_summary(self):
+        """Collect balances and assemble an ``AccountSummary`` for Binance.
+
+        :return: ``AccountSummary`` populated with wallet balances and totals.
+        """
         async with BinanceExchangeAsync(self.portfolio, self.logger) as client:
             resp = await client.get_balance()
             balance = resp.get("balances", [])
@@ -67,4 +80,3 @@ class BinanceSnapshotAsync(SnapshotBase):
                 current_time=self.current_time,
                 tw_time=datetime_to_str(self.current_time + timedelta(hours=8))
             )
-

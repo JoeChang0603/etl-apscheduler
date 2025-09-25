@@ -1,8 +1,13 @@
-# bot/discord.py
+"""Discord webhook integrations used for logging and alerting."""
+
 from __future__ import annotations
-import asyncio, time, hashlib
+
+import asyncio
+import hashlib
+import time
 from dataclasses import dataclass
-from typing import Optional, List, Sequence
+from typing import List, Optional, Sequence
+
 import httpx
 
 from utils.logger.config import LogLevel, LoggerConfig, LogEvent
@@ -10,22 +15,50 @@ from utils.logger.handlers.base import BaseLogHandler
 
 # ---------- Text utilities (共用) ----------
 def fence_code(text: str, lang: str = "") -> str:
-    # 保護內文中的 ```
+    """Wrap ``text`` in a fenced code block while escaping existing fences.
+
+    :param text: Message body to wrap.
+    :param lang: Optional language hint for syntax highlighting.
+    :return: Code-fenced string safe for Discord rendering.
+    """
+
     safe = text.replace("```", "```\u200b")
     return f"```{lang}\n{safe}\n```"
 
 def calc_fence_overhead(lang: str = "") -> int:
-    # 開頭 ```{lang}\n  + 結尾 \n```  = 8 + len(lang)
+    """Return the character overhead introduced by ``fence_code``.
+
+    :param lang: Optional language hint.
+    :return: Number of characters consumed by the code fence wrapper.
+    """
+
     return 8 + len(lang)
 
 def chunk_text(text: str, limit: int) -> List[str]:
-    return [text[i:i+limit] for i in range(0, len(text), limit)] or [""]
+    """Split ``text`` into chunks that do not exceed ``limit`` characters.
+
+    :param text: Input string to split.
+    :param limit: Maximum characters per chunk.
+    :return: List of chunked substrings.
+    """
+
+    return [text[i : i + limit] for i in range(0, len(text), limit)] or [""]
 
 # ---------- Transport (共用) ----------
 class DiscordTransport:
+    """Thin async wrapper around a Discord webhook endpoint."""
+
     def __init__(self, webhook_url: str, *, username: str | None = None,
                  avatar_url: str | None = None, suppress_mentions: bool = True,
                  http_timeout: float = 5.0):
+        """Persist webhook settings and defer HTTP client creation.
+
+        :param webhook_url: Discord webhook URL.
+        :param username: Optional override for message author name.
+        :param avatar_url: Optional override for avatar image.
+        :param suppress_mentions: Whether to disable @everyone/@here mentions.
+        :param http_timeout: HTTP client timeout in seconds.
+        """
         self.url = webhook_url
         self.username = username
         self.avatar_url = avatar_url
@@ -34,15 +67,23 @@ class DiscordTransport:
         self._client: httpx.AsyncClient | None = None
 
     async def start(self):
+        """Instantiate the shared HTTP client."""
         if self._client is None:
             self._client = httpx.AsyncClient(timeout=self.http_timeout)
 
     async def shutdown(self):
+        """Close the HTTP client if it exists."""
         if self._client is not None:
             await self._client.aclose()
             self._client = None
 
     async def send(self, content: str, *, thread_id: int | None = None, wait: bool = False):
+        """POST a message payload to the webhook, handling rate limits.
+
+        :param content: Message body to deliver.
+        :param thread_id: Optional thread identifier for forum channels.
+        :param wait: Whether to request Discord to return the created message.
+        """
         assert self._client is not None
         payload = {"content": content}
         if self.username: payload["username"] = self.username
@@ -69,11 +110,13 @@ class DiscordTransport:
 # ---------- 佇列 Worker 基底（共用） ----------
 @dataclass
 class _Batch:
+    """Queued batch of log lines destined for a Discord post."""
+
     lines: List[str]
     thread_id: Optional[int] = None
 
 class _DiscordQueueWorker:
-    """提供 queue/worker、分片、code fence 與送出。Handler/Alerter 共用這層。"""
+    """Queue worker that batches and delivers messages to Discord."""
     def __init__(
         self,
         transport: DiscordTransport,
@@ -84,6 +127,15 @@ class _DiscordQueueWorker:
         format_as_code: bool = True,
         code_lang: str = "",
     ):
+        """Configure batching behaviour and start with an empty queue.
+
+        :param transport: Transport used to send messages.
+        :param queue_size: Maximum queued batches before dropping.
+        :param max_lines_per_post: Maximum lines combined per Discord post.
+        :param max_chars_per_post: Maximum characters per post including fences.
+        :param format_as_code: Whether to wrap batches in code fences.
+        :param code_lang: Language hint for code fences.
+        """
         self.transport = transport
         self.q: asyncio.Queue[_Batch] = asyncio.Queue(maxsize=queue_size)
         self._task: Optional[asyncio.Task] = None
@@ -93,11 +145,16 @@ class _DiscordQueueWorker:
         self.code_lang = code_lang
 
     async def start(self):
+        """Start the transport and worker task."""
         await self.transport.start()
         if self._task is None:
             self._task = asyncio.create_task(self._runner(), name=self.__class__.__name__)
 
     async def flush(self, timeout: float | None = None):
+        """Wait until the queue is empty or timeout expires.
+
+        :param timeout: Optional number of seconds to wait.
+        """
         async def _join(): await self.q.join()
         if timeout is None:
             await _join()
@@ -105,6 +162,10 @@ class _DiscordQueueWorker:
             await asyncio.wait_for(_join(), timeout=timeout)
 
     async def shutdown(self, timeout: float | None = 5.0):
+        """Flush pending messages and stop the worker and transport.
+
+        :param timeout: Optional number of seconds to wait for queue drain.
+        """
         # 先等 queue 清空，避免尚未送出的訊息被丟掉
         try:
             if timeout is None:
@@ -127,6 +188,11 @@ class _DiscordQueueWorker:
         await self.transport.shutdown()
 
     async def enqueue_lines(self, lines: Sequence[str], *, thread_id: int | None = None):
+        """Queue a sequence of message lines for asynchronous delivery.
+
+        :param lines: Lines to enqueue as a single batch.
+        :param thread_id: Optional thread identifier.
+        """
         if not lines:
             return
         try:
@@ -136,6 +202,7 @@ class _DiscordQueueWorker:
             pass
 
     async def _runner(self):
+        """Continuously process queued batches and send them to Discord."""
         eff_max = self.max_chars - (calc_fence_overhead(self.code_lang) if self.format_as_code else 0)
         eff_max = max(1, eff_max)
 
@@ -162,12 +229,14 @@ class _DiscordQueueWorker:
             self.q.task_done()
 
     async def _send(self, text: str, thread_id: int | None):
+        """Send a prepared block of text using the transport."""
         if self.format_as_code:
             text = fence_code(text, self.code_lang)
         await self.transport.send(text, thread_id=thread_id)
 
 # ---------- Handler：給 Logger 用 ----------
 class DiscordHandler(BaseLogHandler, _DiscordQueueWorker):  # ← BaseLogHandler 放第一
+    """Log handler that ships buffered log events to Discord."""
     def __init__(
         self,
         webhook_url: str,
@@ -216,7 +285,7 @@ class DiscordHandler(BaseLogHandler, _DiscordQueueWorker):  # ← BaseLogHandler
 
 # ---------- Alerter：業務觸發用 ----------
 class DiscordAlerter(_DiscordQueueWorker):
-    """Alerter：key-based cooldown/去重 + emoji 前綴 + enqueue。"""
+    """High-level alert helper with cooldown and dedupe support."""
     def __init__(
         self,
         webhook_url: str,
@@ -252,6 +321,7 @@ class DiscordAlerter(_DiscordQueueWorker):
 
     @staticmethod
     def _prefix_for(level: LogLevel) -> str:
+        """Return the emoji prefix associated with ``level``."""
         return {
             LogLevel.CRITICAL: "🔥",
             LogLevel.ERROR: "❌",

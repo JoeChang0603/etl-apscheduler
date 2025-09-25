@@ -27,6 +27,9 @@ services:
     volumes:
       - ./src/configs/jobs.yaml:/app/jobs.yaml:ro     
       - ./logs:/app/logs        
+    command: ["uv", "run", "uvicorn", "src.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8000:8000"
     restart: unless-stopped
     stop_grace_period: 30s  
 

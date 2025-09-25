@@ -1,33 +1,33 @@
+"""Log handler that writes scheduler job output to rotating files."""
+
 import os
-from typing import Literal, List
 from datetime import datetime, timezone
 from pathlib import Path
-from utils.logger.handlers.base import BaseLogHandler
+from typing import List, Literal
+
 from utils.logger.config import LogEvent
+from utils.logger.handlers.base import BaseLogHandler
 
 
 class JobRotatingFileHandler(BaseLogHandler):
-    """
-    A log handler that creates a new log file for each job execution.
-    The file is named with the UTC timestamp down to the second, in the format YYYYMMDD_HHMMSS.log.
-    """
+    """Write buffered log events to per-job rotating log files."""
 
     def __init__(
-            self, 
-            base_dir: str, 
-            filename_prefix: str = "", 
-            create: bool = True,
-            rotation: Literal["daily", "hourly", "per_minute", "per_second"] = "daily") -> None:
-        """
-        Initialize the JobRotatingFileHandler with a base directory and optional prefix.
+        self,
+        base_dir: str,
+        filename_prefix: str = "",
+        create: bool = True,
+        rotation: Literal["daily", "hourly", "per_minute", "per_second"] = "daily",
+    ) -> None:
+        """Initialise the handler with target directory and rotation scheme.
 
-        Args:
-            base_dir (str): Base directory where log files will be stored
-            filename_prefix (str): Optional prefix for log files (e.g., "trading_bot")
-            create (bool): Whether to create the directory if it doesn't exist
+        :param base_dir: Base directory where log files are written.
+        :param filename_prefix: Optional prefix (subdirectory) for log files.
+        :param create: Whether to create the directory if missing.
+        :param rotation: Frequency granularity for rotating filenames.
         """
         super().__init__()
-        
+
         self.base_dir = Path(base_dir)
         self.filename_prefix = filename_prefix
         self.current_date = None
@@ -45,10 +45,10 @@ class JobRotatingFileHandler(BaseLogHandler):
             self._pattern = "%Y%m%d %H:%M:%S"
 
     def _get_current_filepath(self) -> str:
-        """Generate a unique log file path for the current job execution based on the current UTC timestamp (to the second)."""
+        """Generate a log file path for the current rotation window."""
         pattern = datetime.now(timezone.utc).strftime(self._pattern)
         filename = f"{pattern}.log"
-        
+
         if self.filename_prefix:
             # Create subdirectory for each prefix (e.g., logs/dot_usdt_liao/2025-08-04.log)
             return str(self.base_dir / self.filename_prefix / filename)
@@ -58,7 +58,11 @@ class JobRotatingFileHandler(BaseLogHandler):
 
     # async def push(self, buffer) -> None:
     #     """Write log messages to the daily rotating file"""
-    async def push(self, records: List[LogEvent]):
+    async def push(self, records: List[LogEvent]) -> None:
+        """Append log records to the current rotation file.
+
+        :param records: Buffered log events awaiting persistence.
+        """
         if not records:
             return
         combined_logs = "\n".join([ev.text for ev in records]) + "\n"

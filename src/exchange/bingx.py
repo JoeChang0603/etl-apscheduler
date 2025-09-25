@@ -1,16 +1,26 @@
-import krex.async_support as krex
 from datetime import datetime, timedelta
+
+import krex.async_support as krex
+
 from exchange.base import ExchangeBase
-from utils.logger_factory import log_exception 
+from utils.logger_factory import log_exception
 
 
 class BingxExchangeAsync(ExchangeBase):
+    """Context-managed wrapper for BingX asynchronous client operations."""
+
     def __init__(self, portfolio, logger):
+        """Persist portfolio credentials and logger references.
+
+        :param portfolio: Portfolio configuration containing API credentials.
+        :param logger: Logger used for diagnostic messages.
+        """
         self.portfolio = portfolio
         self.client = None
         self.logger = logger
     
     async def __aenter__(self):
+        """Initialise the BingX client and return ``self``."""
         self.client = await krex.bingx(
             api_key=self.portfolio["api_key"],
             api_secret=self.portfolio["api_secret"],
@@ -20,10 +30,12 @@ class BingxExchangeAsync(ExchangeBase):
         return self
 
     async def __aexit__(self, exc_type, exc, tb):
+        """Close the BingX client on context exit."""
         if self.client:
             await self.client.__aexit__(exc_type, exc, tb)
 
     async def get_balance(self):
+        """Retrieve the unified account balance from BingX."""
         return await self.client.get_account_balance()
     
     # Wait for Development
@@ -43,4 +55,3 @@ class BingxExchangeAsync(ExchangeBase):
     #         log_exception(self.logger, e, context="Bybit Exchange")
     #         return 0
     #     return adjustment
-

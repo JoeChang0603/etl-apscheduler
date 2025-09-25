@@ -1,27 +1,31 @@
+"""Factories for application loggers and helper utilities."""
+
 import traceback
 from contextlib import asynccontextmanager
-from configs.env_config import Env
-from utils.logger.logger import Logger
-from utils.logger.config import LoggerConfig, LogLevel
-from utils.logger.handlers.job_file import JobRotatingFileHandler
-from utils.logger.handlers.error_file import ErrorFileHandler
+
 from bot.discord import DiscordHandler
+from configs.env_config import Env
+from utils.logger.config import LogLevel, LoggerConfig
+from utils.logger.handlers.error_file import ErrorFileHandler
+from utils.logger.handlers.job_file import JobRotatingFileHandler
+from utils.logger.logger import Logger
+
 
 class EnhancedLoggerFactory:
+    """Convenience constructors for configured application loggers."""
 
     @staticmethod
     def create_application_logger(name: str = "etl_bot", 
                                   enable_stdout: bool = False,
                                   log_level: LogLevel = LogLevel.INFO,
                                   config_prefix: str = None) -> Logger:
-        """
-        Create main application logger with daily rotating files
-        
-        Args:
-            name: Logger name
-            enable_stdout: Whether to also print to terminal
-            log_level: Minimum log level
-            config_prefix: Prefix for log filename (e.g., config name)
+        """Create the main application logger with rotating file handlers.
+
+        :param name: Logger name used in records and filenames.
+        :param enable_stdout: Whether to emit log lines to stdout.
+        :param log_level: Minimum log level captured by the logger.
+        :param config_prefix: Optional prefix for log filenames.
+        :return: Configured :class:`Logger` instance.
         """
         config = LoggerConfig(
             base_level=log_level,
@@ -57,7 +61,15 @@ class EnhancedLoggerFactory:
                               prefix: str | None = None,
                               level: LogLevel = LogLevel.INFO,
                               enable_stdout: bool = False) -> Logger:
-        """每次 job 執行各自一個檔的 logger（檔名含時間戳）。"""
+        """Create a per-job logger that writes to rotating log files.
+
+        :param job_id: Scheduler job identifier used for naming logs.
+        :param base_dir: Base directory where logs are stored.
+        :param prefix: Optional custom filename prefix.
+        :param level: Minimum log level recorded by the logger.
+        :param enable_stdout: Whether to mirror output to stdout.
+        :return: :class:`Logger` configured for a single job execution.
+        """
         use_prefix = (prefix if prefix is not None else job_id)
         config = LoggerConfig(
             base_level=level,
@@ -78,7 +90,15 @@ class EnhancedLoggerFactory:
                              prefix: str | None = None,
                              level: LogLevel = LogLevel.INFO,
                              enable_stdout: bool = False):
-        """供 with/async with 使用，內部自動 start/shutdown。"""
+        """Async context manager yielding a started job logger.
+
+        :param job_id: Scheduler job identifier used for naming logs.
+        :param base_dir: Base directory where logs are stored.
+        :param prefix: Optional custom filename prefix.
+        :param level: Minimum log level recorded by the logger.
+        :param enable_stdout: Whether to mirror output to stdout.
+        :yield: Started :class:`Logger` instance with automatic shutdown.
+        """
         log = EnhancedLoggerFactory.create_job_run_logger(
             job_id, base_dir=base_dir, prefix=prefix, level=level, enable_stdout=enable_stdout
         )
@@ -90,13 +110,11 @@ class EnhancedLoggerFactory:
 
 
 def log_exception(logger: Logger, exc: Exception, context: str = ""):
-    """
-    Enhanced exception logging with full traceback
-    
-    Args:
-        logger: Logger instance to use
-        exc: Exception to log
-        context: Additional context information
+    """Log an exception with traceback using the provided logger.
+
+    :param logger: Logger instance used for reporting the failure.
+    :param exc: Exception that should be logged.
+    :param context: Optional textual context describing the failure.
     """
     tb_str = traceback.format_exc()
     

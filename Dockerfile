@@ -20,4 +20,4 @@ COPY src ./src
 COPY src/configs ./configs
 
 # Default command can be overridden by docker compose
-CMD ["uv", "run", "-m", "src.main"]
+# CMD ["uv", "run", "-m", "src.main"]

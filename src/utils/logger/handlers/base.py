@@ -1,19 +1,20 @@
+"""Base classes for log handlers that dispatch buffered log events."""
+
 import asyncio
-import msgspec
-import aiohttp
 from abc import ABC, abstractmethod
 from typing import List
 
-from utils.logger.config import LoggerConfig, LogEvent
+import aiohttp
+import msgspec
+
+from utils.logger.config import LogEvent, LoggerConfig
 
 
 class BaseLogHandler(ABC):
-    """
-    Abstract base class for log handlers, defining how log messages
-    should be pushed to their respective destinations.
-    """
+    """Abstract log handler providing shared utilities."""
 
     def __init__(self):
+        """Initialise lazy resources for derived handlers."""
         self._json_encode = None
         self._http_session = None
         self._ev_loop = None
@@ -21,7 +22,7 @@ class BaseLogHandler(ABC):
 
     @property
     def json_encode(self):
-        """Lazily initialize the JSON encoder."""
+        """Lazily instantiate and return the JSON encoder."""
         if self._json_encode is None:
             self._json_encode = msgspec.json.Encoder().encode
         return self._json_encode
@@ -51,9 +52,7 @@ class BaseLogHandler(ABC):
         return self._primary_config
 
     def add_primary_config(self, config: LoggerConfig):
-        """
-        Add the primary configuration to the handler.
-        """
+        """Attach the originating logger configuration to the handler."""
         self._primary_config = config
 
     def __del__(self):
@@ -75,10 +74,7 @@ class BaseLogHandler(ABC):
 
     @abstractmethod
     async def push(self, records: List[LogEvent]) -> None:
-        """
-        Flushes the given buffer of log entries in some way.
+        """Flush a batch of log records to the handler destination.
 
-        Args:
-            buffer (list[str]): The list of log messages to push.
+        :param records: List of buffered log events.
         """
-        pass

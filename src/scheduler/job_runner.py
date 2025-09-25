@@ -1,17 +1,19 @@
-# src/scheduler/job_runner.py
+"""Helpers that resolve and execute job callables with logging instrumentation."""
+
 import inspect
 import importlib
-from typing import Dict, Any, Callable
+from typing import Any, Callable, Dict
 
-from src.utils.logger_factory import EnhancedLoggerFactory, log_exception
 from src.utils.logger.config import LogLevel
+from src.utils.logger_factory import EnhancedLoggerFactory, log_exception
+
 
 def resolve_jobs_callable(spec: str) -> Callable:
-    """
-    支援：
-      - "price_poller"           -> src.jobs.price_poller:run
-      - "rebalance:run_once"     -> src.jobs.rebalance:run_once
-      - "src.jobs.x.y:func"      -> 已是完整路徑，原樣解析
+    """Translate a job spec string into an async callable under ``src.jobs``.
+
+    :param spec: Job function spec such as ``price_poller`` or ``pkg.mod:func``.
+    :return: Coroutine function resolved from ``src.jobs``.
+    :raises TypeError: If the resolved callable is not async.
     """
     if ":" in spec:
         module_part, func_name = spec.split(":", 1)
@@ -29,11 +31,21 @@ def resolve_jobs_callable(spec: str) -> Callable:
         raise TypeError(f"Job function must be async: {module_path}:{func_name}")
     return fn
 
-async def run_job(func_spec: str, job_id: str, kwargs: Dict[str, Any], *,
-                  level: LogLevel = LogLevel.DEBUG) -> None:
-    """
-    固定的 Runner：由 APScheduler 直接呼叫。
-    於執行時才解析 func_spec -> 真正 callable，並注入 logger。
+async def run_job(
+    func_spec: str,
+    job_id: str,
+    kwargs: Dict[str, Any],
+    *,
+    level: LogLevel = LogLevel.DEBUG,
+) -> None:
+    """Resolve a job target, inject logging, and execute it for APScheduler.
+
+    :param func_spec: Job function spec string passed from APScheduler.
+    :param job_id: Identifier of the APScheduler job being executed.
+    :param kwargs: Keyword arguments to forward to the resolved job coroutine.
+    :param level: Minimum log level for the per-run logger.
+    :raises TypeError: If ``func_spec`` does not resolve to an async callable.
+    :raises Exception: Re-raises execution errors after logging them.
     """
     fn = resolve_jobs_callable(func_spec)  # 例如 "price_poller" 或 "src.jobs.price_poller:run"
 

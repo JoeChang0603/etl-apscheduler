@@ -1,23 +1,34 @@
 from datetime import datetime, timedelta
 
-from snapshot.base import SnapshotBase
 from exchange.okx import OkxExchangeAsync
 from model.account_summary import AccountSummary, AssetBalance
+from snapshot.base import SnapshotBase
+from utils.logger_factory import log_exception
 from utils.model_parser import model_parser
 from utils.misc import datetime_to_str
-from utils.logger_factory import log_exception
-
-
 
 
 class OkxSnapshotAsync(SnapshotBase):
+    """Produce account summaries for OKX portfolios."""
+
     def __init__(self, portfolio, current_time, interval, logger):
+        """Store OKX snapshot context details.
+
+        :param portfolio: Portfolio metadata carrying OKX credentials.
+        :param current_time: Datetime used as the snapshot timestamp.
+        :param interval: Minutes over which adjustments are evaluated.
+        :param logger: Logger used for diagnostics.
+        """
         self.portfolio = portfolio
         self.current_time = current_time
         self.interval = interval
         self.logger = logger
 
     async def snapshot_account_summary(self):
+        """Collect balances and compose an ``AccountSummary`` for OKX.
+
+        :return: ``AccountSummary`` including balances and adjustments.
+        """
         async with OkxExchangeAsync(self.portfolio, self.logger) as client:
             resp = await client.get_balance()
             balance = resp["data"][0]  
@@ -46,6 +57,11 @@ class OkxSnapshotAsync(SnapshotBase):
             )
 
     async def get_transfer_adjustment(self, interval):
+        """Calculate transfer adjustments over the provided interval.
+
+        :param interval: Interval in minutes for scanning account bills.
+        :return: Net transfer adjustment value.
+        """
         async with OkxExchangeAsync(self.portfolio, self.logger) as client:
             resp = await client.get_transfer_adjustment()
             self.logger.info(resp)

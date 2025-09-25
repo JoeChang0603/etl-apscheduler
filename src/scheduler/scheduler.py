@@ -1,19 +1,21 @@
-import yaml
-from zoneinfo import ZoneInfo 
+"""Factory helpers for building and populating the shared APScheduler instance."""
+
 from pathlib import Path
 from typing import Any, Dict
-from functools import wraps
+
+import yaml
+from zoneinfo import ZoneInfo
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.jobstores.base import JobLookupError
 from apscheduler.triggers.cron import CronTrigger
-from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.date import DateTrigger
-from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+from apscheduler.triggers.interval import IntervalTrigger
 
 from configs.env_config import Env
 from scheduler.job_runner import run_job
-from utils.logger_factory import log_exception 
+from utils.logger_factory import log_exception
 
 DEFAULTS = {
     "coalesce": True,
@@ -23,12 +25,31 @@ DEFAULTS = {
 
 UTC = ZoneInfo("UTC")
 
+
 def build_scheduler() -> AsyncIOScheduler:
+    """Create an ``AsyncIOScheduler`` backed by the configured SQLAlchemy store."""
     jobstores = {"default": SQLAlchemyJobStore(url=Env.SQLALCHEMY_URL)}
-    scheduler = AsyncIOScheduler(timezone=UTC, jobstores=jobstores, job_defaults = DEFAULTS)
+    scheduler = AsyncIOScheduler(
+        timezone=UTC,
+        jobstores=jobstores,
+        job_defaults=DEFAULTS,
+    )
     return scheduler
 
-def load_jobs_from_yaml(scheduler: AsyncIOScheduler, path: Path, tz: ZoneInfo = UTC, etl_logger=None):
+
+def load_jobs_from_yaml(
+    scheduler: AsyncIOScheduler,
+    path: Path,
+    tz: ZoneInfo = UTC,
+    etl_logger=None,
+) -> None:
+    """Synchronize scheduler jobs from a YAML configuration file.
+
+    :param scheduler: Target ``AsyncIOScheduler`` instance to populate.
+    :param path: Path to the YAML file describing jobs.
+    :param tz: Default timezone applied to newly created triggers.
+    :param etl_logger: Logger used for status and error reporting.
+    """
     if not path.exists():
         etl_logger.warning(f"Jobs config not found: {path}")
         return
@@ -95,4 +116,3 @@ def load_jobs_from_yaml(scheduler: AsyncIOScheduler, path: Path, tz: ZoneInfo = 
             etl_logger.info(f"job={j.id} func={f.__module__}.{f.__qualname__} kwargs={j.kwargs}")
         except Exception as e:
             etl_logger.error(f"inspect job {j.id} failed: {e}")
-

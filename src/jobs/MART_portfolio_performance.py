@@ -1,14 +1,16 @@
+"""Job that aggregates portfolio performance metrics and persists them."""
+
 from datetime import datetime, timedelta
 from typing import Any
-from pymongo import UpdateOne
-
-from src.utils.logger.logger import Logger
-from src.utils.logger_factory import log_exception
-from src.mongo.base import MongoClient
-from utils.misc import datetime_to_str
-from utils.bson_utils import bsonify_row
 
 import pandas as pd
+from pymongo import UpdateOne
+
+from src.mongo.base import MongoClient
+from src.utils.logger.logger import Logger
+from src.utils.logger_factory import log_exception
+from utils.bson_utils import bsonify_row
+from utils.misc import datetime_to_str
 
 
 mongo = MongoClient()
@@ -16,7 +18,11 @@ portfolio_col = mongo.DATA_DB.portfolio
 account_summary_col = mongo.DATA_DB.account_summary_1_minute
 portfolio_performance_col = mongo.MART_DB.portfolio_performance
 
-async def run(logger: Logger):
+async def run(logger: Logger) -> None:
+    """Aggregate latest portfolio metrics and upsert performance documents.
+
+    :param logger: Logger instance for diagnostics and error reporting.
+    """
     current_time = datetime.utcnow().replace(microsecond=0)
 
     try:
@@ -44,7 +50,12 @@ async def run(logger: Logger):
 #################### Private Function ############################
 
 
-async def _master_portfolio_aggregate(current_time: datetime):
+async def _master_portfolio_aggregate(current_time: datetime) -> pd.DataFrame:
+    """Return the latest account summary snapshot joined with portfolio info.
+
+    :param current_time: Timestamp applied to the aggregated records.
+    :return: DataFrame containing per-portfolio totals and adjustments.
+    """
     query = {
         "status": "active"
     }
@@ -82,6 +93,10 @@ async def _master_portfolio_aggregate(current_time: datetime):
     return df
 
 async def _get_latest_portfolio_performance() -> dict[str, dict[str, Any]]:
+    """Fetch the most recent performance document for each portfolio.
+
+    :return: Mapping of portfolio ids to their latest performance record.
+    """
     pipeline = [
         {"$sort": {"portfolio": 1, "current_time": -1}},  # 利用複合索引
         {"$group": {"_id": "$portfolio", "doc": {"$first": "$$ROOT"}}},
@@ -98,24 +113,13 @@ async def _vectorized_process(
     current_time: datetime,
     logger: Logger
 ) -> pd.DataFrame:
-    """
-    透過 vectorized 操作，計算各 portfolio 的績效指標（NAV、CRR、MDD...）
+    """Compute vectorised portfolio metrics using the latest account summary.
 
-    :param latest_account_summary: 由 account_summary 聚合出的最新資料（含 total_usd_value、transfer_adjustment 等欄位）
-    :param latest_perf_dict:       每個 portfolio 對應的最新績效紀錄（由 get_latest_portfolio_performance 回傳）
-    :param current_time:           當下統一處理時間戳記（UTC）
-
-    :return: DataFrame，欄位包含：
-        - portfolio
-        - total_usd_value
-        - history_high
-        - nav
-        - current_return
-        - crr
-        - cd
-        - mdd
-        - current_time
-        - tw_time
+    :param latest_account_summary: DataFrame from account summary aggregation.
+    :param latest_perf_dict: Latest performance document per portfolio.
+    :param current_time: UTC timestamp applied to the generated records.
+    :param logger: Logger used for exception reporting.
+    :return: DataFrame with updated performance metrics ready for persistence.
     """
     try:
         # 將 dict 轉成 DataFrame

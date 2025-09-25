@@ -1,21 +1,34 @@
 from datetime import timedelta
 
-from snapshot.base import SnapshotBase
 from exchange.bitmex import BitmexExchangeAsync
 from model.account_summary import AccountSummary, AssetBalance
+from snapshot.base import SnapshotBase
 from utils.model_parser import model_parser
 from utils.misc import datetime_to_str
 
 
 
 class BitmexSnapshotAsync(SnapshotBase):
+    """Produce account summaries for BitMEX portfolios."""
+
     def __init__(self, portfolio, current_time, interval, logger):
+        """Store BitMEX snapshot context information.
+
+        :param portfolio: Portfolio metadata with BitMEX API credentials.
+        :param current_time: Datetime representing the snapshot timestamp.
+        :param interval: Interval in minutes for adjustment computations.
+        :param logger: Logger used for diagnostics.
+        """
         self.portfolio = portfolio
         self.current_time = current_time
         self.interval = interval
         self.logger = logger
 
     async def snapshot_account_summary(self):
+        """Collect balances and return an ``AccountSummary`` for BitMEX.
+
+        :return: ``AccountSummary`` containing margin balances and valuations.
+        """
         async with BitmexExchangeAsync(self.portfolio, self.logger) as client:
             resp = await client.get_balance()
             balances = {}
@@ -61,4 +74,3 @@ class BitmexSnapshotAsync(SnapshotBase):
                 current_time=self.current_time,
                 tw_time=datetime_to_str(self.current_time + timedelta(hours=8))
             )
-

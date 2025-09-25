@@ -1,29 +1,18 @@
+"""Helpers for flattening dataclass instances into dictionaries."""
+
 from dataclasses import fields, is_dataclass
+from typing import Any, Dict
 
 
-def model_parser(dataclass) -> dict:
+def model_parser(dataclass_obj: Any) -> Dict[str, Any]:
+    """Convert a dataclass instance into a plain dictionary.
+
+    :param dataclass_obj: Dataclass instance to serialise.
+    :return: Dictionary mapping field names to their values.
+    :raises TypeError: If ``dataclass_obj`` is not a dataclass instance.
     """
-    Parse the data to get the model names and their attributes
 
-    @dataclass
-    class FundingRate:
-        exchange: str
-        product_type: str
-        product_id: str
-        funding_rate: Decimal
-        funding_time: int
-        next_funding_time: int
-    ->
-    {
-        "exchange": FundingRate.exchange,
-        "product_type": FundingRate.product_type,
-        "product_id": FundingRate.product_id,
-        "funding_rate": FundingRate.funding_rate,
-        "funding_time": FundingRate.funding_time,
-        ...
-    }
-    """
-    if not is_dataclass(dataclass):
+    if not is_dataclass(dataclass_obj):
         raise TypeError("Input must be a dataclass")
 
-    return {field.name: getattr(dataclass, field.name) for field in fields(dataclass)}
+    return {field.name: getattr(dataclass_obj, field.name) for field in fields(dataclass_obj)}

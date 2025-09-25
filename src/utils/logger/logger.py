@@ -1,12 +1,15 @@
+"""Asynchronous buffered logger that feeds custom handlers."""
+
+import asyncio
 import sys
 import traceback
-import asyncio
 from typing import Optional
+
 from colorama import Fore, Style, init as colorama_init
 
-from utils.misc import time_iso8601, time_s
-from utils.logger.config import LogLevel, LoggerConfig, LogEvent
+from utils.logger.config import LogEvent, LogLevel, LoggerConfig
 from utils.logger.handlers.base import BaseLogHandler
+from utils.misc import time_iso8601, time_s
 
 colorama_init(autoreset=True)
 
@@ -27,10 +30,7 @@ ICONS = {
 
 
 class Logger:
-    """
-    A simple asynchronous logger that buffers messages and pushes them to
-    configured handlers at an appropriate time or based on severity.
-    """
+    """Asynchronous logger that buffers messages before dispatching them."""
 
     def __init__(
         self,
@@ -38,17 +38,12 @@ class Logger:
         name: str = "",
         handlers: Optional[list[BaseLogHandler]] = None,
     ):
-        """
-        Initializes a Logger with specified configuration and handlers.
+        """Initialise the logger with optional configuration and handlers.
 
-        Args:
-            config (LoggerConfig): Configuration settings for the logger (base level, stdout, buffer size, etc.).
-            name (str): Name of the logger. Defaults to an empty string.
-            handlers (list[BaseLogHandler], optional): A list of handler objects that inherit from BaseLogHandler.
-                Defaults to an empty list if not provided.
-
-        Raises:
-            TypeError: If one of the provided handlers does not inherit from LogHandler.
+        :param config: Configuration settings controlling buffering and output.
+        :param name: Name prefix used in emitted log records.
+        :param handlers: Sequence of handlers derived from :class:`BaseLogHandler`.
+        :raises TypeError: If a provided handler does not extend :class:`BaseLogHandler`.
         """
         self._config = config
         if self._config is None:
@@ -97,14 +92,16 @@ class Logger:
     #     self._buffer_size = 0
     #     self._buffer_start_time = time_s()
 
-    async def _flush_buffer(self):
+    async def _flush_buffer(self) -> None:
+        """Flush the buffered log events to all registered handlers."""
         batch = list(self._buffer)                        # ← 直接整批 LogEvent
         for handler in self._handlers:
             await handler.push(batch)
         self._buffer.clear()                              # ← 清空
         self._buffer_start_time = time_s()
 
-    async def _log_ingestor(self):
+    async def _log_ingestor(self) -> None:
+        """Consume queued log events and dispatch them to handlers."""
         try:
             while self._is_running or not self._msg_queue.empty():
                 try:
@@ -151,13 +148,11 @@ class Logger:
         except asyncio.CancelledError:
             print("[Logger] Log ingestor cancelled")
 
-    def _process_log(self, level: LogLevel, msg: str):
-        """
-        Submits a log message to the queue if it meets the minimum base level.
+    def _process_log(self, level: LogLevel, msg: str) -> None:
+        """Submit a log message to the queue if it meets the base level.
 
-        Args:
-            level (LogLevel): The severity level of the message.
-            msg (str): The actual log message.
+        :param level: Severity level associated with the message.
+        :param msg: Log message text.
         """
         try:
             icon = ICONS.get(level, "•")
@@ -175,8 +170,10 @@ class Logger:
             traceback.print_exc(file=sys.stderr)
     
     async def _drain(self, timeout: float | None = None) -> None:
-        """
-        等待 queue 清空（背景 ingestor 對每一筆都會呼叫 task_done()）
+        """Wait for the queue to empty, respecting an optional timeout.
+
+        :param timeout: Maximum seconds to wait for the queue to drain.
+        :raises asyncio.TimeoutError: If the drain does not complete in time.
         """
         async def _join():
             await self._msg_queue.join()
@@ -187,12 +184,9 @@ class Logger:
 
 
     def set_format(self, format_string: str) -> None:
-        """
-        Modify the format string for log messages in runtime.
+        """Modify the format string used when rendering log messages.
 
-        Args:
-            format_string (str): The new format string.
-                Supports {timestamp}, {level}, and {message} placeholders.
+        :param format_string: New format string compatible with logger substitutions.
         """
         self.debug(f"Changing format string from {self._config.str_format} to {format_string}")
         self._config.str_format = format_string
@@ -200,11 +194,9 @@ class Logger:
             handlers.add_primary_config(self._config)
 
     def set_log_level(self, level: LogLevel) -> None:
-        """
-        Modify the logger's base log level at runtime.
+        """Modify the logger's base log level at runtime.
 
-        Args:
-            level (LogLevel): The new base log level.
+        :param level: New minimum level accepted by the logger.
         """
         self.debug(f"Changing base log level from {self._config.base_level} to {level}")
         self._config.base_level = level
@@ -212,72 +204,61 @@ class Logger:
             handlers.add_primary_config(self._config)
 
     def trace(self, msg: str) -> None:
-        """
-        Send a trace-level log message.
+        """Emit a trace-level log message.
 
-        Args:
-            msg (str): The log message text.
+        :param msg: Log message text.
         """
         valid_level = self._config.base_level == LogLevel.TRACE
         if self._is_running and valid_level:
             self._process_log(LogLevel.TRACE, msg)
 
     def debug(self, msg: str) -> None:
-        """
-        Send a debug-level log message.
+        """Emit a debug-level log message.
 
-        Args:
-            msg (str): The log message text.
+        :param msg: Log message text.
         """
         valid_level = self._config.base_level <= LogLevel.DEBUG
         if self._is_running and valid_level:
             self._process_log(LogLevel.DEBUG, msg)
 
     def info(self, msg: str) -> None:
-        """
-        Send an info-level log message.
+        """Emit an info-level log message.
 
-        Args:
-            msg (str): The log message text.
+        :param msg: Log message text.
         """
         valid_level = self._config.base_level <= LogLevel.INFO
         if self._is_running and valid_level:
             self._process_log(LogLevel.INFO, msg)
 
     def warning(self, msg: str) -> None:
-        """
-        Send a warning-level log message.
+        """Emit a warning-level log message.
 
-        Args:
-            msg (str): The log message text.
+        :param msg: Log message text.
         """
         valid_level = self._config.base_level <= LogLevel.WARNING
         if self._is_running and valid_level:
             self._process_log(LogLevel.WARNING, msg)
 
     def error(self, msg: str) -> None:
-        """
-        Send an error-level log message.
+        """Emit an error-level log message.
 
-        Args:
-            msg (str): The log message text.
+        :param msg: Log message text.
         """
         valid_level = self._config.base_level <= LogLevel.ERROR
         if self._is_running and valid_level:
             self._process_log(LogLevel.ERROR, msg)
 
     def critical(self, msg: str) -> None:
-        """
-        Send a critical-level log message.
+        """Emit a critical-level log message.
 
-        Args:
-            msg (str): The log message text.
+        :param msg: Log message text.
         """
         valid_level = self._config.base_level <= LogLevel.CRITICAL
         if self._is_running and valid_level:
             self._process_log(LogLevel.CRITICAL, msg)
 
-    async def start(self):
+    async def start(self) -> None:
+        """Start the logger ingest task and underlying handlers."""
         self._is_running = True
         self._msg_queue = asyncio.Queue()
         for h in self._handlers:
@@ -285,7 +266,8 @@ class Logger:
                 await h.start()
         self._log_ingestor_task = asyncio.create_task(self._log_ingestor())
 
-    async def shutdown(self):
+    async def shutdown(self) -> None:
+        """Flush remaining events and stop the logger and handlers."""
         self._is_running = False
 
         await asyncio.sleep(0)
@@ -329,21 +311,15 @@ class Logger:
         #     self._buffer.clear()
 
     def is_running(self) -> bool:
-        """
-        Check if the master logger is running.
-        """
+        """Return whether the logger ingest loop is currently running."""
         return self._is_running
 
     def get_name(self) -> str:
-        """
-        Get the name of the master logger.
-        """
+        """Return the logger name."""
         return self._name
 
     def get_config(self) -> LoggerConfig:
-        """
-        Get the configuration of the master logger.
-        """
+        """Return the logger configuration object."""
         return self._config
 
     # def get_system_info(self) -> dict:

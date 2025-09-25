@@ -1,52 +1,46 @@
-# Define jobs to be registered at startup.
-# id must be unique. 'trigger' can be cron / interval / date.
-
-# jobs:
-#   - id: sample_etl_every_minute              # Job 的唯一識別碼（避免衝突）
-#     func: jobs.sample_job:run_sample_etl     # 指定要呼叫的函式（模組路徑:函式名）
-#     trigger: cron                            # 觸發器種類：
-#                                              # - cron     → 使用 cron 表達式（適合固定排程，如每天 00:00）
-#                                              # - interval → 固定時間間隔執行（例如每 10 秒、每 5 分鐘）
-#                                              # - date     → 在指定時間只執行一次
-#     cron: "*/1 * * * *"                      # Cron 表達式：每分鐘執行一次
-#     kwargs:                                  # 傳給函式的參數（kwargs）
-#       batch_size: 200                        
-#     misfire_grace_time: 0                    # 設為 0 → 錯過的排程一律丟棄，不會補執行
-#                                              # （例如停機 5 分鐘後重啟，不會補跑 5 次，只會從下一次開始）
-#     max_instances: 1                         # 限制同一時間最多只有 1 個實例在跑
-#                                              # （避免多個 job 同時執行造成資料重複或鎖衝突）
-
-#   - id: sample_etl_midnight
-#     func: etl_app.etl_jobs.sample_job:run_sample_etl
-#     trigger: cron
-#     cron: "0 0 * * *"  # 00:00 daily
-#     kwargs:
-#       batch_size: 1000
-#     misfire_grace_time: 600
-#     max_instances: 1
-#     coalesce: true
-
 jobs:
-  # - id: example
-  #   func: price_poller:test          # 會被解析成 src.jobs.price_poller:run
-  #   # trigger: interval
-  #   # every: { seconds: 5 }
-  #   trigger: cron
-  #   second: "*/10"
-  #   kwargs:
-  #     symbol: "BTCUSDT"
-  #     interval: 0.5
-
   - id: DATA_account_summary_1_minute
     func: DATA_account_summary_1_minute:run
     trigger: cron
     second: "*/10"
+
   - id: MART_master_portfolio_performance
     func: MART_master_portfolio_performance:run
     trigger: cron
     second: "*/20"
+
   - id: MART_portfolio_performance
     func: MART_portfolio_performance:run
     trigger: cron
     second: "*/20"
 
+  - id: OP_delete_duplicate_data
+    func: OP_delete_duplicate_data:run
+    trigger: date
+    run_date: "2099-01-01T00:00:00Z"
+    kwargs:
+      db_name: null
+      coll_name: null
+      time_field: "current_time"
+      time_start: null
+      time_end: null
+      group_fields: []
+      extra_match: null
+      sort_tiebreak: []
+      allow_disk_use: true
+      batch_delete_size: 1000
+
+  - id: OP_insert_data
+    func: OP_insert_data:run
+    trigger: date
+    run_date: "2099-01-01T00:00:00Z"
+    kwargs:
+      mode: null
+      db_name: null
+      coll_name: null
+      documents: null
+      update_ops: null
+      key_fields: null
+      merge_strategy: null
+      merge_upsert: null
+      allow_disk_use: null

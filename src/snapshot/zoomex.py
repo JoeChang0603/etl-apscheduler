@@ -1,21 +1,34 @@
-from snapshot.base import SnapshotBase
+from datetime import datetime, timedelta
+
 from exchange.zoomex import ZoomexExchangeAsync
 from model.account_summary import AccountSummary, AssetBalance
+from snapshot.base import SnapshotBase
+from utils.logger_factory import log_exception
 from utils.model_parser import model_parser
 from utils.misc import datetime_to_str
-from utils.logger_factory import log_exception
-
-from datetime import datetime, timedelta
 
 
 class ZoomexSnapshotAsync(SnapshotBase):
+    """Produce account summaries for Zoomex portfolios."""
+
     def __init__(self, portfolio, current_time, interval, logger):
+        """Store snapshot context and configuration for Zoomex.
+
+        :param portfolio: Portfolio metadata with Zoomex credentials.
+        :param current_time: Datetime representing the snapshot moment.
+        :param interval: Interval in minutes for adjustment purposes.
+        :param logger: Logger used for diagnostics.
+        """
         self.portfolio = portfolio
         self.current_time = current_time
         self.interval = interval
         self.logger = logger
 
     async def snapshot_account_summary(self):
+        """Collect balances and return an ``AccountSummary`` for Zoomex.
+
+        :return: ``AccountSummary`` describing wallet holdings.
+        """
         async with ZoomexExchangeAsync(self.portfolio, self.logger) as client:
             resp = await client.get_balance()
             balance = resp["result"]["list"][0]

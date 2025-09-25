@@ -1,3 +1,5 @@
+"""Illustrative sample showing how dependent job scheduling could be wired."""
+
 # src/scheduler/scheduler.py（或你現有檔案）
 # from collections import defaultdict
 # from apscheduler.events import EVENT_JOB_EXECUTED, EVENT_JOB_ERROR

@@ -1,21 +1,27 @@
+"""Job that composes master portfolio performance metrics and stores them."""
+
 from datetime import datetime, timedelta
 from typing import Any
-from pymongo import UpdateOne
-
-from src.utils.logger.logger import Logger
-from src.utils.logger_factory import log_exception
-from src.mongo.base import MongoClient
-from utils.misc import datetime_to_str
-from utils.bson_utils import bsonify_row
 
 import pandas as pd
+from pymongo import UpdateOne
+
+from src.mongo.base import MongoClient
+from src.utils.logger.logger import Logger
+from src.utils.logger_factory import log_exception
+from utils.bson_utils import bsonify_row
+from utils.misc import datetime_to_str
 
 mongo = MongoClient()
 portfolio_col = mongo.DATA_DB.portfolio
 account_summary_col = mongo.DATA_DB.account_summary_1_minute
 master_portfolio_performance_col = mongo.MART_DB.master_portfolio_performance
 
-async def run(logger: Logger):
+async def run(logger: Logger) -> None:
+    """Aggregate master portfolio metrics and upsert performance documents.
+
+    :param logger: Logger instance for diagnostics and error reporting.
+    """
     current_time = datetime.utcnow().replace(microsecond=0)
 
     try:
@@ -44,7 +50,12 @@ async def run(logger: Logger):
 #################### Private Function ############################
 
 
-async def _master_portfolio_aggregate(current_time: datetime):
+async def _master_portfolio_aggregate(current_time: datetime) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Return portfolio-level totals and master portfolio aggregations.
+
+    :param current_time: Timestamp applied to the aggregated records.
+    :return: Tuple of detailed portfolio DataFrame and aggregated result DataFrame.
+    """
     query = {
         "status": "active"
     }
@@ -87,7 +98,13 @@ async def _master_portfolio_aggregate(current_time: datetime):
     )
     return df, result
 
-async def _composite_aggregate(src_df: pd.DataFrame, result_df: pd.DataFrame):
+async def _composite_aggregate(src_df: pd.DataFrame, result_df: pd.DataFrame) -> pd.DataFrame:
+    """Append composite portfolio aggregates to the result set.
+
+    :param src_df: Detailed portfolio DataFrame containing composite mappings.
+    :param result_df: Aggregated master portfolio totals.
+    :return: Concatenated DataFrame including composite aggregates.
+    """
 
     src_df = src_df[src_df["composite"].notna() & (src_df["composite"] != "")].loc[:,['composite','master_portfolio']].drop_duplicates()
     src_df = pd.merge(result_df, src_df[src_df["composite"].notna() & (src_df["composite"] != "")],  on="master_portfolio", how="inner", suffixes=("", "__r")).loc[
@@ -112,6 +129,10 @@ async def _composite_aggregate(src_df: pd.DataFrame, result_df: pd.DataFrame):
     return result[~((result["total_usd_value"] == 0) & (result["transfer_adjustment"] == 0))]
 
 async def _get_latest_master_portfolio_performance() -> dict[str, dict[str, Any]]:
+    """Fetch the most recent master portfolio performance document per id.
+
+    :return: Mapping of master portfolio ids to their latest records.
+    """
     pipeline = [
         {"$sort": {"master_portfolio": 1, "current_time": -1}},  # 利用複合索引
         {"$group": {"_id": "$master_portfolio", "doc": {"$first": "$$ROOT"}}},
@@ -128,24 +149,13 @@ async def _vectorized_process(
     current_time: datetime,
     logger: Logger
 ) -> pd.DataFrame:
-    """
-    透過 vectorized 操作，計算各 master_portfolio 的績效指標（NAV、CRR、MDD...）
+    """Compute vectorised master portfolio metrics using latest summaries.
 
-    :param latest_account_summary: 由 account_summary 聚合出的最新資料（含 total_usd_value、transfer_adjustment 等欄位）
-    :param latest_perf_dict:       每個 master_portfolio 對應的最新績效紀錄（由 get_latest_portfolio_performance 回傳）
-    :param current_time:           當下統一處理時間戳記（UTC）
-
-    :return: DataFrame，欄位包含：
-        - master_portfolio
-        - total_usd_value
-        - history_high
-        - nav
-        - current_return
-        - crr
-        - cd
-        - mdd
-        - current_time
-        - tw_time
+    :param latest_account_summary: DataFrame from account summary aggregation.
+    :param latest_perf_dict: Latest performance document per master portfolio.
+    :param current_time: UTC timestamp applied to generated records.
+    :param logger: Logger used for exception reporting.
+    :return: DataFrame with updated master portfolio metrics.
     """
     try:
         # 將 dict 轉成 DataFrame
