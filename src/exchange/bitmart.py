@@ -36,7 +36,7 @@ class BitmartExchangeAsync(ExchangeBase):
 
     async def get_balance(self):
         """Retrieve the unified account balance from BingX."""
-        return await self.client.get_account_balance()
+        return await self.client.get_contract_assets()
     
     async def get_trading_pairs_details(self):
         """Fetch contract specifications for supported trading pairs."""

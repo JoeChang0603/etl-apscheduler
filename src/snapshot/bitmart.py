@@ -30,7 +30,7 @@ class BitmartSnapshotAsync(SnapshotBase):
         """
         async with BitmartExchangeAsync(self.portfolio, self.logger) as client:
             resp = await client.get_balance()
-            balance = resp['data'].get("wallet", "")
+            balance = resp['data']
             balances = {}
 
             total_usd = 0.0
@@ -50,13 +50,13 @@ class BitmartSnapshotAsync(SnapshotBase):
                     ticker = await client.get_ticker_of_a_pair(product_symbol=f"{pair[0]}-{pair[1]}-SPOT")
                     last_price = float(ticker.get('data',"")['last'])
 
-                    total = float(asset['available']) * last_price
-                    available = float(asset["available"])
-                    notional = (available + float(asset["frozen"]) + float(asset["unAvailable"])) * last_price
+                    total = float(asset['available_balance']) * last_price
+                    available = float(asset["available_balance"])
+                    notional = (available + float(asset["frozen_balance"])) * last_price
                 else:
-                    total = float(asset["available"])
+                    total = float(asset["available_balance"])
                     available = total
-                    notional = (available + float(asset["frozen"]) + float(asset["unAvailable"]))
+                    notional = (available + float(asset["frozen_balance"]))
                 
                 tmp = model_parser(
                             AssetBalance(
