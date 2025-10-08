@@ -24,7 +24,7 @@ class TriggerJobRequest(BaseModel):
                         "db_name": "C_DATA",
                         "coll_name": "portfolio",
                         "documents": [
-                            {
+                            { 
                                 "portfolio": "demo",
                                 "status": "active",
                                 "updated_at": "2024-09-30T00:00:00Z"

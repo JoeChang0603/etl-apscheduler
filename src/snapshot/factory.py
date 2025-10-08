@@ -4,6 +4,7 @@ from snapshot.bitmex import BitmexSnapshotAsync
 from snapshot.bybit import BybitSnapshotAsync
 from snapshot.okx import OkxSnapshotAsync
 from snapshot.zoomex import ZoomexSnapshotAsync
+from snapshot.bitmart import BitmartSnapshotAsync
 
 
 class SnapshotFactory:
@@ -40,5 +41,7 @@ class SnapshotFactory:
             return BitmexSnapshotAsync(self.portfolio, self.current_time, self.interval, self.logger)
         elif self.portfolio["exchange"] == "zoomex":
             return ZoomexSnapshotAsync(self.portfolio, self.current_time, self.interval, self.logger)
+        elif self.portfolio["exchange"] == "bitmart":
+            return BitmartSnapshotAsync(self.portfolio, self.current_time, self.interval, self.logger)
         else:
             raise NotImplementedError

@@ -450,7 +450,7 @@ requires-dist = [
     { name = "colorama", specifier = ">=0.4.6" },
     { name = "dotenv", specifier = ">=0.9.9" },
     { name = "fastapi", specifier = ">=0.115.0" },
-    { name = "krex", specifier = ">=0.17.0" },
+    { name = "krex", specifier = ">=0.21.0" },
     { name = "motor", specifier = ">=3.7.1" },
     { name = "msgspec", specifier = ">=0.19.0" },
     { name = "pandas", specifier = ">=2.3.2" },
@@ -850,7 +850,7 @@ wheels = [
 
 [[package]]
 name = "krex"
-version = "0.17.0"
+version = "0.21.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "eth-account" },
@@ -862,9 +862,9 @@ dependencies = [
     { name = "polars" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d1/ec/47f071ee977f481e32df31ae6cc82ee3f4b57d1a8e598b8ae15e382a7cd5/krex-0.17.0.tar.gz", hash = "sha256:62936ac02f8a1fa49cbe38c68d591978bdd43a961c6e7829dbda905b13bfd85e", size = 122513, upload-time = "2025-09-10T23:43:26.685Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/22/9d/ff9ac0e9f335d838dfa332db3014ab6c95dcae3ef26e647d80c784c3509d/krex-0.21.0.tar.gz", hash = "sha256:e8212f4ccc78850bf2af6f3e0ca2afd1e7c42af2df4997c183b405520283356e", size = 123375, upload-time = "2025-10-05T20:36:11.345Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ba/98/9f030a87e71e4a3c85d97c9b3c83c174fa1f38939dad11fc35e6be543930/krex-0.17.0-py3-none-any.whl", hash = "sha256:9cc5f162b33605538a8e8db3641a4110e7800c0308978af1b3a8df6d6a7e1123", size = 180565, upload-time = "2025-09-10T23:43:25.315Z" },
+    { url = "https://files.pythonhosted.org/packages/b4/ef/fe3b46d4f4f3686f08c9557a9d6762be22abf8500b2255d60a643ef53c4c/krex-0.21.0-py3-none-any.whl", hash = "sha256:dde902ddfe4bc5de81b59f9cb515f9d7f41401b6704b6ff8a9efb26e3078e518", size = 181267, upload-time = "2025-10-05T20:36:09.635Z" },
 ]
 
 [[package]]
