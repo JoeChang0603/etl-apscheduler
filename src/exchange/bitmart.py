@@ -21,7 +21,7 @@ class BitmartExchangeAsync(ExchangeBase):
     
     async def __aenter__(self):
         """Initialise the Bitmart client and return ``self``."""
-        self.client = await krex.bingx(
+        self.client = await krex.bitmart(
             api_key=self.portfolio["api_key"],
             api_secret=self.portfolio["api_secret"],
             memo=self.portfolio["memo"],
