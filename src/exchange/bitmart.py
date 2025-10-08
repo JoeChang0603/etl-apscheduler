@@ -24,6 +24,7 @@ class BitmartExchangeAsync(ExchangeBase):
         self.client = await krex.bingx(
             api_key=self.portfolio["api_key"],
             api_secret=self.portfolio["api_secret"],
+            memo=self.portfolio["memo"],
             preload_product_table=False,
         )
         await self.client.__aenter__()
