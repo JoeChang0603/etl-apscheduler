@@ -21,14 +21,14 @@ services:
       options:
         max-size: "100m"
         max-file: "5"
-    command:
-      - "postgres"
-      - "-c logging_collector=on"
-      - "-c log_directory=/var/lib/postgresql/data/pg_log"
-      - "-c log_filename=postgresql-%Y-%m-%d.log"
-      - "-c log_rotation_age=1d"
-      - "-c log_rotation_size=100MB"
-      - "-c log_truncate_on_rotation=on"
+    command: >
+      postgres
+      -c logging_collector=on
+      -c log_directory=/var/lib/postgresql/data/pg_log
+      -c log_filename=postgresql-%Y-%m-%d.log
+      -c log_rotation_age=1d
+      -c log_rotation_size=100MB
+      -c log_truncate_on_rotation=on
 
   scheduler:
     build: .
