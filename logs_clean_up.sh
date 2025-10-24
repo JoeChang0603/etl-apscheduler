@@ -1,14 +1,17 @@
-#!/usr/bin/env bash
 set -euo pipefail
 
 DIR="/home/admin/data-warehouse-apscheduler/logs"
 RETENTION_DAYS=7
-SAFE_MIN=10   # 近 10 分鐘內修改過的檔案不刪，避免正在寫入
+SAFE_MIN=10
 
-# GNU find（大多數標準 Linux）
+echo "🧹 Cleaning host logs under $DIR (older than $RETENTION_DAYS days)..."
 find "$DIR" -type f \
   \( -name "*.log" -o -name "*.log.gz" -o -name "*.error.log" \) \
   -mmin +$SAFE_MIN -mtime +$RETENTION_DAYS -print -delete
 
-docker exec etl_postgres bash -lc \
-  "find /var/lib/postgresql/data/pg_log -type f -name '*.log' -mtime +$RETENTION_DAYS -delete"
+echo "🧹 Cleaning PostgreSQL logs inside Docker container 'etl_postgres'..."
+docker exec -it etl_postgres bash -lc \
+  "echo 'Inside container:' && \
+   find /var/lib/postgresql/data/pg_log -type f -name '*.log' -mtime +$RETENTION_DAYS -print -delete"
+
+echo "✅ Cleanup complete!"
