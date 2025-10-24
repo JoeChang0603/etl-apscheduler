@@ -11,6 +11,7 @@ dependencies = [
     "colorama>=0.4.6",
     "dotenv>=0.9.9",
     "fastapi>=0.115.0",
+    "docker>=7.1.0",
     "krex>=0.21.0",
     "motor>=3.7.1",
     "msgspec>=0.19.0",
