@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from exchange.okx import OkxExchangeAsync
+from exchange.okx.rest import OkxExchangeAsync
 from model.account_summary import AccountSummary, AssetBalance
 from snapshot.base import SnapshotBase
 from utils.logger_factory import log_exception

@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from exchange.zoomex import ZoomexExchangeAsync
+from exchange.zoomex.rest import ZoomexExchangeAsync
 from model.account_summary import AccountSummary, AssetBalance
 from snapshot.base import SnapshotBase
 from utils.logger_factory import log_exception

@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from exchange.bingx import BingxExchangeAsync
+from exchange.bingx.rest import BingxExchangeAsync
 from model.account_summary import AccountSummary, AssetBalance
 from snapshot.base import SnapshotBase
 from utils.model_parser import model_parser

@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from exchange.bybit import BybitExchangeAsync
+from exchange.bybit.rest import BybitExchangeAsync
 from model.account_summary import AccountSummary, AssetBalance
 from snapshot.base import SnapshotBase
 from utils.model_parser import model_parser
