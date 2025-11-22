@@ -1,0 +1,23 @@
+binance:
+  api_key: BINANCE_TEST_KEY
+  api_secret: BINANCE_TEST_SECRET
+bingx:
+  api_key: BINGX_TEST_KEY
+  api_secret: BINGX_TEST_SECRET
+bitmart:
+  api_key: BITMART_TEST_KEY
+  api_secret: BITMART_TEST_SECRET
+  memo: BITMART_MEMO
+bitmex:
+  api_key: BITMEX_TEST_KEY
+  api_secret: BITMEX_TEST_SECRET
+bybit:
+  api_key: BYBIT_TEST_KEY
+  api_secret: BYBIT_TEST_SECRET
+okx:
+  api_key: OKX_TEST_KEY
+  api_secret: OKX_TEST_SECRET
+  password: OKX_TEST_PASSWORD
+zoomex:
+  api_key: ZOOMEX_TEST_KEY
+  api_secret: ZOOMEX_TEST_SECRET  
