@@ -1,4 +1,4 @@
-# Data Warehouse APScheduler
+# 🗄️ Data Warehouse APScheduler
 
 This project packages a collection of asynchronous ETL jobs behind an APScheduler
 instance and exposes their status, controls, and telemetry through a FastAPI
@@ -6,7 +6,7 @@ application. It also provides real-time notifications via Discord webhooks and
 structured logging utilities.
 
 
-## Table of Contents
+## 📑 Table of Contents
 
 1. [Project Structure](#project-structure)
 2. [Prerequisites](#prerequisites)
@@ -21,7 +21,7 @@ structured logging utilities.
 11. [Development Workflow](#development-workflow)
 
 
-## Project Structure
+## 🧭 Project Structure
 
 ```
 src/
@@ -40,7 +40,7 @@ Dockerfile             Build instructions for the scheduler container
 ```
 
 
-## Prerequisites
+## 📋 Prerequisites
 
 - Python 3.11+
 - [uv](https://github.com/astral-sh/uv) for dependency management (project uses `uv.sync`)
@@ -48,7 +48,7 @@ Dockerfile             Build instructions for the scheduler container
 - A running PostgreSQL instance configured via environment variables
 
 
-## Environment Configuration
+## ⚙️ Environment Configuration
 
 Populate `.env` (you can start from `.env.example`) with the required environment
 variables. The application validates the presence of critical values at startup:
@@ -68,9 +68,9 @@ uv run python -c "from configs.env_config import Env; Env.validate()"
 ```
 
 
-## Running the Scheduler API
+## 🚀 Running the Scheduler API
 
-### Local (uv + uvicorn)
+### 🖥️ Local (uv + uvicorn)
 
 ```bash
 uv sync  # install dependencies
@@ -80,7 +80,7 @@ uv run uvicorn src.api.app:app --host 0.0.0.0 --port 8000
 The FastAPI application boots the APScheduler service during startup, loads
 `jobs.yaml`, and begins executing registered jobs.
 
-### Docker Compose
+### 🐳 Docker Compose
 
 ```bash
 docker-compose up --build
@@ -89,7 +89,7 @@ docker-compose up --build
 This starts Postgres and the scheduler API container listening on port `8000`.
 
 
-## HTTP API Endpoints
+## 🔗 HTTP API Endpoints
 
 | Method | Path | Description |
 |--------|------|-------------|
@@ -107,7 +107,7 @@ All timestamps are reported in UTC. Per-job telemetry retains up to 50 historica
 events (submitted, success, error, missed).
 
 
-## WebSocket Streaming
+## 📡 WebSocket Streaming
 
 Connect to `ws://<host>:8000/ws/scheduler` to receive real-time scheduler events.
 
@@ -124,7 +124,7 @@ ws.onmessage = evt => console.log(JSON.parse(evt.data));
 ```
 
 
-## Manual Job Control
+## 🎛️ Manual Job Control
 
 Use the `POST /scheduler/jobs/{job_id}/trigger` endpoint to accelerate a job.
 Optionally include overrides inside the request body:
@@ -145,7 +145,7 @@ When overrides are provided, the scheduler clones the job with a one-off
 to run immediately.
 
 
-## System Metrics
+## 📊 System Metrics
 
 The `GET /system/metrics` endpoint surfaces:
 
@@ -156,7 +156,7 @@ The `GET /system/metrics` endpoint surfaces:
 Useful for health dashboards and alerting when running on EC2 or similar VMs.
 
 
-## Discord Alerts & Logging
+## 🔔 Discord Alerts & Logging
 
 `src/bot/discord.py` defines reusable transports:
 
@@ -167,7 +167,7 @@ Jobs such as `DATA_account_summary_1_minute` use `DiscordAlerter` to notify when
 portfolio thresholds are breached. Configure webhooks via environment variables.
 
 
-## Jobs Overview
+## 🗂️ Jobs Overview
 
 | Job | Description |
 |-----|-------------|
@@ -179,7 +179,7 @@ Jobs rely on MongoDB (`C_DATA`, `C_MART` or test equivalents) and produce rotate
 logs under `logs/` using the custom logging framework.
 
 
-## Development Workflow
+## 🧪 Development Workflow
 
 1. **Install dependencies:** `uv sync`
 2. **Run style checkers / type hints** (optional but recommended) using your
